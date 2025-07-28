@@ -1,103 +1,35 @@
 FROM php:8.2-fpm-alpine
 
-ARG SERVER_ENVIRONMENT
 ARG APP_DIR=/var/www
-
-# Setup Working Dir
 WORKDIR $APP_DIR
 
-RUN set -ex \
-  && apk --no-cache add \
-    postgresql-dev \
-    make
+# Install prebuilt PHP extensions and dependencies
+RUN set -eux && \
+    apk add --no-cache \
+        bash git icu-dev libzip-dev libpng-dev libjpeg-turbo-dev libwebp-dev freetype-dev \
+        imagemagick imagemagick-dev \
+        zlib-dev curl-dev postgresql-dev npm zip vim nano \
+        php82-gd php82-intl php82-pgsql php82-pdo_pgsql php82-bcmath php82-zip php82-pcntl \
+        php82-pecl-redis php82-pecl-imagick php82-opcache gnu-libiconv && \
+    ln -s /usr/lib/preloadable_libiconv.so /usr/lib/preloadable_libiconv.so.php
 
-# Add Repositories
-RUN rm -f /etc/apk/repositories &&\
-    echo "http://dl-cdn.alpinelinux.org/alpine/v3.18/main" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/v3.18/community" >> /etc/apk/repositories
+ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so.php
 
-# fix work iconv library with alpine
-RUN apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ --allow-untrusted gnu-libiconv
-ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
-
-# Add Build Dependencies
-RUN apk add --no-cache \
-    php82-pear \
-    libwebp-dev \
-    libzip-dev \
-    libjpeg-turbo-dev \
-    libjpeg-turbo \
-    libpng-dev \
-    libxpm-dev \
-    php82-dev gcc \
-    zlib-dev \
-    curl-dev \
-    imagemagick \
-    imagemagick-dev \
-    freetype-dev \
-    icu-dev \
-    g++ \
-    npm \
-    zip \
-    vim \
-    nano
-
-# Configure & Install Extension
-RUN docker-php-ext-install -j "$(nproc)" \
-    curl \
-    pgsql \
-    pdo_mysql \
-    pdo \
-    pdo_pgsql \
-    bcmath \
-    zip
-
-
-RUN docker-php-ext-configure intl && \
-    docker-php-ext-install intl &&\
-    docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql
-
-
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
-    docker-php-ext-install -j$(nproc) gd
-
-RUN docker-php-ext-configure pcntl --enable-pcntl \
-  && docker-php-ext-install pcntl
-
-#Install Redis
-RUN pecl install redis && docker-php-ext-enable redis
-
-# Install Build Tools
-RUN apk add --no-cache build-base
-
-# Install Imagick PHP extension
-RUN apk update && apk upgrade
-
-RUN pecl install imagick && docker-php-ext-enable imagick
-
-# Configure and enable OPCache extension
-RUN docker-php-ext-configure opcache --enable-opcache
-RUN docker-php-ext-install opcache
-# Add Composer lastest version
+# Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer
 
-COPY ./.docker/app/FPM/8.2/opcache.ini $PHP_INI_DIR/conf.d/
-COPY ./.docker/app/FPM/8.2/php.ini $PHP_INI_DIR/conf.d/
+# Copy PHP configuration
+COPY .docker/app/FPM/8.2/opcache.ini $PHP_INI_DIR/conf.d/
+COPY .docker/app/FPM/8.2/php.ini $PHP_INI_DIR/conf.d/
 
-# Copy configuration files
-RUN cd $APP_DIR
-RUN chown www-data:www-data $APP_DIR
-#COPY --chown=www-data:www-data . .
-RUN mkdir -p /var/www/bootstrap/cache
-RUN chmod -R 775 /var/www/bootstrap/cache
+# Create Laravel directories with correct permissions
+RUN mkdir -p $APP_DIR/bootstrap/cache $APP_DIR/storage/logs && \
+    touch $APP_DIR/storage/logs/worker.log && \
+    chmod -R 775 $APP_DIR/bootstrap/cache $APP_DIR/storage && \
+    chown -R www-data:www-data $APP_DIR
 
-COPY ./.docker/app/FPM/8.2/init.sh /usr/bin/startx.sh
+# Add entrypoint
+COPY .docker/app/FPM/8.2/init.sh /usr/bin/startx.sh
 RUN chmod +x /usr/bin/startx.sh
-
-RUN mkdir -p storage/logs
-RUN touch storage/logs/worker.log
-
-RUN chown -R www-data:www-data /var/www/
-RUN chown -R www-data:www-data /var/www/storage
 
 ENTRYPOINT ["/usr/bin/startx.sh"]
