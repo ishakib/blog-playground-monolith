@@ -75,7 +75,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Set Working Directory
-WORKDIR /var/www/app
+WORKDIR /var/www
 
 # Start Supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
