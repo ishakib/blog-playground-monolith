@@ -18,9 +18,6 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-8 d-flex justify-content-end">
-                    <!-- Optional: Add any additional filters or buttons here -->
-                </div>
             </div>
 
             <div class="table-responsive">
