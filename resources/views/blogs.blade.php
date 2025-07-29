@@ -37,6 +37,7 @@
         var table = $('#blogsTable').DataTable({
             processing: true,
             serverSide: true,
+            responsive: true,
             ajax: {
                 url: "{{ route('blogs.data') }}",
                 data: function(d) {
@@ -54,11 +55,12 @@
             pageLength: 10,
             lengthMenu: [5, 10, 25, 50],
             language: {
-                search: "Global Search:"
+                search: "Search:"
             },
         });
 
-        // When author filter dropdown changes, apply search on author column (index 3)
+        $('.dataTables_filter input[type="search"]').attr('placeholder', 'Blog title or content...');
+
         $('#authorFilter').on('change', function() {
             table.ajax.reload(); // reload data with new user param
         });
