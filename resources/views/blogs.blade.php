@@ -1,33 +1,42 @@
 @extends('layouts.app')
 
-@section('title', 'Blogs List')
+@section('title', 'Blogs')
 
 @section('content')
-<div class="container">
-    <h2 class="mb-4">Blogs List</h2>
+<div class="container my-5">
+    <h2 class="mb-4">Blogs</h2>
 
-    <!-- Author filter dropdown outside the table -->
-    <div class="mb-3">
-        <label for="authorFilter" class="form-label">Filter by Author:</label>
-        <select id="authorFilter" class="form-control form-control-sm" style="width: 200px;">
-            <option value="">All Authors</option>
-            @foreach($authors as $author)
-            <option value="{{ $author->id }}">{{ $author->name }}</option>
-            @endforeach
-        </select>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-4">
+                    <label for="authorFilter" class="form-label fw-semibold">Filter by Author:</label>
+                    <select id="authorFilter" class="form-select form-select-sm">
+                        <option value="">All Authors</option>
+                        @foreach($authors as $author)
+                        <option value="{{ $author->id }}">{{ $author->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-8 d-flex justify-content-end">
+                    <!-- Optional: Add any additional filters or buttons here -->
+                </div>
+            </div>
 
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="blogsTable" style="min-width: 600px;">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 25%;">Title</th>
+                        <th style="width: 50%;">Content</th>
+                        <th style="width: 20%;">Author</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
     </div>
-
-    <table class="table table-bordered" id="blogsTable">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>Title</th>
-            <th>Content</th>
-            <th>Author</th>
-        </tr>
-        </thead>
-    </table>
 </div>
 @endsection
 
@@ -41,9 +50,7 @@
             ajax: {
                 url: "{{ route('blogs.data') }}",
                 data: function(d) {
-                    // Send author filter value from external dropdown
                     d.user = $('#authorFilter').val();
-                    console.log('Sending user filter:', d.user);
                 }
             },
             columns: [
@@ -57,12 +64,15 @@
             language: {
                 search: "Search:"
             },
+            order: [[0, 'desc']]
         });
 
+        // Add placeholder to the global search input
         $('.dataTables_filter input[type="search"]').attr('placeholder', 'Blog title or content...');
 
+        // Reload table on author filter change
         $('#authorFilter').on('change', function() {
-            table.ajax.reload(); // reload data with new user param
+            table.ajax.reload();
         });
     });
 </script>
