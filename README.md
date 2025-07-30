@@ -1,61 +1,126 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# docker-boilerplate
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Table of Contents
+- [Introduction](#introduction)
+- [Docker Services](#docker-services)
+- [Requirements](#requirements)
+- [Stop & Remove all the containers (optional)](#stop--remove-all-the-containers-optional)
+- [Installation](#installation)
+- [File Overview](#file-overview)
+- [Setup Boilerplate App and Web for HTTPS](#setup-Boilerplate-app-and-web-for-https)
+- [Setup Boilerplate App and Web for SSH](#setup-Boilerplate-app-and-web-for-ssh)
+- [Browser Access](#browser-access)
+- [Stopping Services](#stopping-services)
 
-## About Laravel
+## Introduction
+This is a Docker-based project for running an application and web services. It provides a convenient way to set up and run these services using Docker containers.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Docker Services
+- nginx
+- app
+- worker
+- database
+- redis
+- certbot
+- mailhog
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
+- Docker
+- Docker Compose
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Stop & Remove all the containers (optional)
+To stop and remove all Docker containers, you can run the following commands:
 
-## Learning Laravel
+```shell
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Installation
+1. Clone the project and navigate to the project directory:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+   SSH:
+   ```shell
+   git clone git@github.com:ishakib/blog-playground-monolith.git
+   cd blog-playground-monolith
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-## Laravel Sponsors
+## File Overview
+The project structure looks like this:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```shell
+docker-boilerplate
+├── .docker
+│   ├── nginx
+│   │   ├── nginx.conf
+├── .data
+├── .env.example
+├── docker-compose.yml
+```
 
-### Premium Partners
+## Example `.env` file
+```shell
+PHP_VERSION=8.3
+DB_USERNAME=
+DB_PASSWORD=
+DB_DATABASE=
+NGROK_AUTH=
+NGROK_DOMAIN=
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Nginx Configuration
 
-## Contributing
+```shell
+./.docker/nginx/app/FPM/local.conf:/etc/nginx/conf.d/default.conf
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Setup Boilerplate App and Web for HTTPS
+```shell
+cp .env.example .env
+docker-compose up -d --build
+docker-compose exec app php artisan migrate:fresh --seed
+docker-compose exec admin php artisan migrate:fresh --seed
+```
 
-## Code of Conduct
+## Setup Boilerplate App and Web for SSH
+```shell
+cp .env.example .env
+docker-compose up -d --build
+docker-compose exec app php artisan migrate:fresh --seed
+docker-compose exec admin php artisan migrate:fresh --seed
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Browser Access
+Access the services in your browser at `http://localhost:80` or `Ngrok Domain`.
 
-## Security Vulnerabilities
+## Stopping Services
+To stop all the services, run the command:
+```shell
+docker-compose down
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Ngrok & Cloudflare for Local Tunneling
 
-## License
+### Ngrok
+```shell
+NGROK_AUTH=
+NGROK_DOMAIN=
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+To start Ngrok tunneling:
+```shell
+cloudflared tunnel --url localhost:8008
+```
+To run in the background:
+```shell
+nohup cloudflared tunnel --url localhost:8008 &
+```
+To stop the process:
+```shell
+ps aux | grep cloudflared
+pgrep cloudflared
+kill PID
+```
+
+For custom domains, refer to Cloudflare documentation.
